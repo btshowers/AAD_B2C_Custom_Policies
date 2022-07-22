@@ -1,0 +1,243 @@
+<TrustFrameworkPolicy xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://schemas.microsoft.com/online/cpim/schemas/2013/06" PolicySchemaVersion="0.3.0.0" TenantId="bshowers.onmicrosoft.com" PolicyId="B2C_1A_TrustFrameworkExtensions" PublicPolicyUri="http://bshowers.onmicrosoft.com/B2C_1A_TrustFrameworkExtensions" TenantObjectId="4f9515be-0b9a-4e4a-9cb4-2d2e69031414">
+  <BasePolicy>
+    <TenantId>bshowers.onmicrosoft.com</TenantId>
+    <PolicyId>B2C_1A_TrustFrameworkLocalization</PolicyId>
+  </BasePolicy>
+  <BuildingBlocks>
+      <ClaimsSchema>
+      <ClaimType Id="acr_values">
+        <DisplayName>Authentication Context Reference</DisplayName>
+        <DataType>string</DataType>
+      </ClaimType>
+    </ClaimsSchema>
+    <ClaimsTransformations>
+     <ClaimsTransformation Id="CreateDisplayNameFromFirstNameAndLastName" TransformationMethod="FormatStringMultipleClaims">
+       <InputClaims>
+         <InputClaim ClaimTypeReferenceId="givenName" TransformationClaimType="inputClaim1" />
+         <InputClaim ClaimTypeReferenceId="surName" TransformationClaimType="inputClaim2" />
+       </InputClaims>
+       <InputParameters>
+         <InputParameter Id="stringFormat" DataType="string" Value="{0} {1}" />
+       </InputParameters>
+       <OutputClaims>
+         <OutputClaim ClaimTypeReferenceId="displayName" TransformationClaimType="outputClaim" />
+       </OutputClaims>
+      </ClaimsTransformation>
+      <ClaimsTransformation Id="CreateRandomUPNUserName" TransformationMethod="CreateRandomString">
+  <InputParameters>
+    <InputParameter Id="randomGeneratorType" DataType="string" Value="GUID" />
+  </InputParameters>
+  <OutputClaims>
+    <OutputClaim ClaimTypeReferenceId="upnUserName" TransformationClaimType="outputClaim" />
+  </OutputClaims>
+</ClaimsTransformation>
+<ClaimsTransformation Id="CreateUserPrincipalName" TransformationMethod="FormatStringClaim">
+  <InputClaims>
+    <InputClaim ClaimTypeReferenceId="upnUserName" TransformationClaimType="inputClaim" />
+  </InputClaims>
+  <InputParameters>
+    <InputParameter Id="stringFormat" DataType="string" Value="cpim_{0}@{RelyingPartyTenantId}" />
+  </InputParameters>
+  <OutputClaims>
+    <OutputClaim ClaimTypeReferenceId="userPrincipalName" TransformationClaimType="outputClaim" />
+  </OutputClaims>
+</ClaimsTransformation>
+<ClaimsTransformation Id="CreateAlternativeSecurityId" TransformationMethod="CreateAlternativeSecurityId">
+  <InputClaims>
+    <InputClaim ClaimTypeReferenceId="issuerUserId" TransformationClaimType="key" />
+    <InputClaim ClaimTypeReferenceId="identityProvider" TransformationClaimType="identityProvider" />
+  </InputClaims>
+  <OutputClaims>
+    <OutputClaim ClaimTypeReferenceId="alternativeSecurityId" TransformationClaimType="alternativeSecurityId" />
+  </OutputClaims>
+</ClaimsTransformation>
+    </ClaimsTransformations>
+  </BuildingBlocks>
+  <ClaimsProviders>
+    <ClaimsProvider>
+      <DisplayName>Azure Active Directory</DisplayName>
+      <TechnicalProfiles>
+        <TechnicalProfile Id="AAD-Common">
+          <DisplayName>Azure Active Directory</DisplayName>
+          <Metadata>
+            <Item Key="ApplicationObjectId">ea10a4cf-62fc-4471-b87b-1293c507f9ac</Item>
+            <Item Key="ClientId">322a4628-f625-4789-a4f4-1a0bfd433c62</Item>
+          </Metadata>
+        </TechnicalProfile>
+      </TechnicalProfiles>
+    </ClaimsProvider>
+    <ClaimsProvider>
+      <DisplayName>Local Account SignIn</DisplayName>
+      <TechnicalProfiles>
+        <TechnicalProfile Id="login-NonInteractive">
+          <Metadata>
+            <Item Key="client_id">a22a880e-4d9c-443f-80e7-b11a38a3d766</Item>
+            <Item Key="IdTokenAudience">26fcde6d-a9d0-4c51-8f90-4c9e04078032</Item>
+          </Metadata>
+          <InputClaims>
+            <InputClaim ClaimTypeReferenceId="client_id" DefaultValue="a22a880e-4d9c-443f-80e7-b11a38a3d766" />
+            <InputClaim ClaimTypeReferenceId="resource_id" PartnerClaimType="resource" DefaultValue="26fcde6d-a9d0-4c51-8f90-4c9e04078032" />
+          </InputClaims>
+        </TechnicalProfile>
+      </TechnicalProfiles>
+    </ClaimsProvider>
+    <!--Login Claims Providers-->
+    <ClaimsProvider>
+      <DisplayName>Login.gov</DisplayName>
+      <TechnicalProfiles>
+        <TechnicalProfile Id="LoginGov-IAL1-OIDC">
+          <DisplayName>Login.gov IAL1</DisplayName>
+          <Protocol Name="OpenIdConnect" />
+          <Metadata>
+            <Item Key="client_id">urn:gov:gsa:openidconnect.profiles:sp:sso:doe:AADB2C</Item>
+            <Item Key="METADATA">https://idp.int.identitysandbox.gov/.well-known/openid-configuration</Item>
+            <Item Key="scope">openid profile email</Item>
+            <Item Key="response_types">code</Item>
+            <Item Key="response_mode">query</Item>
+            <Item Key="token_endpoint_auth_method">private_key_jwt</Item>
+            <Item Key="HttpBinding">POST</Item>
+            <Item Key="SingleLogoutEnabled">true</Item>
+            <Item Key="UsePolicyInRedirectUri">false</Item>
+          </Metadata>
+          <CryptographicKeys>
+            <Key Id="assertion_signing_key" StorageReferenceId="B2C_1A_LoginGovSecret" />
+          </CryptographicKeys>
+          <InputClaims>
+            <InputClaim ClaimTypeReferenceId="acr_values" DefaultValue="http://idmanagement.gov/ns/assurance/ial/1" AlwaysUseDefaultValue="true" />
+          </InputClaims>
+          <OutputClaims>
+            <OutputClaim ClaimTypeReferenceId="identityProvider" DefaultValue="login.gov" />
+            <OutputClaim ClaimTypeReferenceId="authenticationSource" DefaultValue="socialIdpAuthentication" />
+            <OutputClaim ClaimTypeReferenceId="issuerUserId" PartnerClaimType="sub" />
+            <OutputClaim ClaimTypeReferenceId="email" PartnerClaimType="email" />
+          </OutputClaims>
+          <!--<OutputClaimsTransformations>
+            <OutputClaimsTransformation ReferenceId="CreateRandomUPNUserName" />
+            <OutputClaimsTransformation ReferenceId="CreateUserPrincipalName" />
+            <OutputClaimsTransformation ReferenceId="CreateAlternativeSecurityId" />
+          </OutputClaimsTransformations>-->
+        </TechnicalProfile>
+        <TechnicalProfile Id="LoginGov-IAL2-OIDC">
+          <DisplayName>Login.gov IAL2</DisplayName>
+          <Protocol Name="OpenIdConnect" />
+          <Metadata>
+            <Item Key="client_id">urn:gov:gsa:openidconnect.profiles:sp:sso:doe:AADB2C</Item>
+            <Item Key="METADATA">https://idp.int.identitysandbox.gov/.well-known/openid-configuration</Item>
+            <Item Key="scope">openid profile email phone verified_at</Item>
+            <Item Key="response_types">code</Item>
+            <Item Key="response_mode">query</Item>
+            <Item Key="token_endpoint_auth_method">private_key_jwt</Item>
+            <Item Key="HttpBinding">POST</Item>
+            <Item Key="SingleLogoutEnabled">true</Item>
+            <Item Key="UsePolicyInRedirectUri">false</Item>
+          </Metadata>
+          <CryptographicKeys>
+            <Key Id="assertion_signing_key" StorageReferenceId="B2C_1A_LoginGovSecret" />
+          </CryptographicKeys>
+          <InputClaims>
+            <InputClaim ClaimTypeReferenceId="acr_values" DefaultValue="http://idmanagement.gov/ns/assurance/ial/2" AlwaysUseDefaultValue="true" />
+          </InputClaims>
+          <OutputClaims>
+            <OutputClaim ClaimTypeReferenceId="identityProvider" DefaultValue="login.gov" />
+            <OutputClaim ClaimTypeReferenceId="authenticationSource" DefaultValue="socialIdpAuthentication" />
+            <OutputClaim ClaimTypeReferenceId="issuerUserId" PartnerClaimType="sub" />
+            <OutputClaim ClaimTypeReferenceId="displayName" />
+            <OutputClaim ClaimTypeReferenceId="givenName" PartnerClaimType="given_name" />
+            <OutputClaim ClaimTypeReferenceId="surname" PartnerClaimType="family_name" />
+            <OutputClaim ClaimTypeReferenceId="email" PartnerClaimType="email" />
+            <OutputClaim ClaimTypeReferenceId="strongAuthenticationPhoneNumber" PartnerClaimType="phone" />
+          </OutputClaims>
+          <OutputClaimsTransformations>
+            <OutputClaimsTransformation ReferenceId="CreateDisplayNameFromFirstNameAndLastName" />
+            <!--<OutputClaimsTransformation ReferenceId="AddCountryCodeToStrongAuthPhoneNumber" />-->
+            <OutputClaimsTransformation ReferenceId="CreateRandomUPNUserName" />
+            <OutputClaimsTransformation ReferenceId="CreateUserPrincipalName" />
+            <OutputClaimsTransformation ReferenceId="CreateAlternativeSecurityId" />
+          </OutputClaimsTransformations>
+        </TechnicalProfile>
+      </TechnicalProfiles>
+    </ClaimsProvider>
+  </ClaimsProviders>
+  <!--UserJourneys>
+	
+	</UserJourneys-->
+  <UserJourneys xmlns="http://schemas.microsoft.com/online/cpim/schemas/2013/06">
+    <UserJourney Id="SignUpOrSignIn">
+      <OrchestrationSteps>
+        <OrchestrationStep Order="1" Type="CombinedSignInAndSignUp" ContentDefinitionReferenceId="api.signuporsignin">
+          <ClaimsProviderSelections>
+            <ClaimsProviderSelection TargetClaimsExchangeId="LoginGovIal1Exchange" />
+            <ClaimsProviderSelection TargetClaimsExchangeId="LoginGovIal2Exchange" />
+            <ClaimsProviderSelection ValidationClaimsExchangeId="LocalAccountSigninEmailExchange" />
+          </ClaimsProviderSelections>
+          <ClaimsExchanges>
+            <ClaimsExchange Id="LocalAccountSigninEmailExchange" TechnicalProfileReferenceId="SelfAsserted-LocalAccountSignin-Email" />
+          </ClaimsExchanges>
+        </OrchestrationStep>
+        <OrchestrationStep Order="2" Type="ClaimsExchange">
+          <Preconditions>
+            <Precondition Type="ClaimsExist" ExecuteActionsIf="true">
+              <Value>objectId</Value>
+              <Action>SkipThisOrchestrationStep</Action>
+            </Precondition>
+          </Preconditions>
+          <ClaimsExchanges>
+            <ClaimsExchange Id="LoginGovIal1Exchange" TechnicalProfileReferenceId="LoginGov-IAL1-OIDC" />
+            <ClaimsExchange Id="LoginGovIal2Exchange" TechnicalProfileReferenceId="LoginGov-IAL2-OIDC" />
+            <ClaimsExchange Id="SignUpWithLogonEmailExchange" TechnicalProfileReferenceId="LocalAccountSignUpWithLogonEmail" />
+          </ClaimsExchanges>
+        </OrchestrationStep>
+        <!-- This step reads any user attributes that we may not have received when in the token. -->
+        <OrchestrationStep Order="3" Type="ClaimsExchange">
+          <ClaimsExchanges>
+            <ClaimsExchange Id="AADUserReadWithObjectId" TechnicalProfileReferenceId="AAD-UserReadUsingObjectId" />
+          </ClaimsExchanges>
+        </OrchestrationStep>
+        <OrchestrationStep Order="4" Type="SendClaims" CpimIssuerTechnicalProfileReferenceId="JwtIssuer" />
+      </OrchestrationSteps>
+      <ClientDefinition ReferenceId="DefaultWeb" />
+    </UserJourney>
+    <UserJourney Id="ProfileEdit">
+      <OrchestrationSteps>
+        <OrchestrationStep Order="1" Type="ClaimsProviderSelection" ContentDefinitionReferenceId="api.idpselections">
+          <ClaimsProviderSelections>
+            <ClaimsProviderSelection TargetClaimsExchangeId="LocalAccountSigninEmailExchange" />
+          </ClaimsProviderSelections>
+        </OrchestrationStep>
+        <OrchestrationStep Order="2" Type="ClaimsExchange">
+          <ClaimsExchanges>
+            <ClaimsExchange Id="LocalAccountSigninEmailExchange" TechnicalProfileReferenceId="SelfAsserted-LocalAccountSignin-Email" />
+          </ClaimsExchanges>
+        </OrchestrationStep>
+        <OrchestrationStep Order="3" Type="ClaimsExchange">
+          <ClaimsExchanges>
+            <ClaimsExchange Id="AADUserReadWithObjectId" TechnicalProfileReferenceId="AAD-UserReadUsingObjectId" />
+          </ClaimsExchanges>
+        </OrchestrationStep>
+        <OrchestrationStep Order="4" Type="ClaimsExchange">
+          <ClaimsExchanges>
+            <ClaimsExchange Id="B2CUserProfileUpdateExchange" TechnicalProfileReferenceId="SelfAsserted-ProfileUpdate" />
+          </ClaimsExchanges>
+        </OrchestrationStep>
+        <OrchestrationStep Order="5" Type="SendClaims" CpimIssuerTechnicalProfileReferenceId="JwtIssuer" />
+      </OrchestrationSteps>
+      <ClientDefinition ReferenceId="DefaultWeb" />
+    </UserJourney>
+    <UserJourney Id="PasswordReset">
+      <OrchestrationSteps>
+        <OrchestrationStep Order="1" Type="ClaimsExchange">
+          <ClaimsExchanges>
+            <ClaimsExchange Id="PasswordResetUsingEmailAddressExchange" TechnicalProfileReferenceId="LocalAccountDiscoveryUsingEmailAddress" />
+          </ClaimsExchanges>
+        </OrchestrationStep>
+        <OrchestrationStep Order="2" Type="ClaimsExchange">
+          <ClaimsExchanges>
+            <ClaimsExchange Id="NewCredentials" TechnicalProfileReferenceId="LocalAccountWritePasswordUsingObjectId" />
+          </ClaimsExchanges>
+        </OrchestrationStep>
+        <OrchestrationStep Order="3" Type="SendClaims" CpimIssuerTechnicalProfileReferenceId="JwtIssuer" />
+      </OrchestrationSteps>
+      <ClientDefinition ReferenceId="DefaultWeb" />
+    </UserJourney>
+  </UserJourneys>
+</TrustFrameworkPolicy>
